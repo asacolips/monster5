@@ -94,14 +94,14 @@ class ChallengeRatingInput extends React.Component {
     return (
       <fieldset>
         <legend>Enter CR:</legend>
-        <input value={cr}
+        <input type="number" value={cr}
           onChange={this.handleChange} />
       </fieldset>
     );
   }
 }
 
-class Calculator extends React.Component {
+class Monster extends React.Component {
   constructor(props) {
     super(props);
     this.handleCrChange = this.handleCrChange.bind(this);
@@ -139,6 +139,6 @@ class Calculator extends React.Component {
 }
 
 ReactDOM.render(
-  <Calculator />,
+  <Monster />,
   document.getElementById('root')
 );
