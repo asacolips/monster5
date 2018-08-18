@@ -550,7 +550,7 @@ class Monster extends React.Component {
     // Define states.
     this.state = {
       title: 'Dangerous Foe!',
-      cr: '1',
+      cr: '10',
       size: 'Medium',
       type: 'monstrosity',
       mod: '',
@@ -661,12 +661,12 @@ class Monster extends React.Component {
             <CheckboxInput
               value={useMultiTarget}
               name="useMultiTarget"
-              label="Include multi-target attack?"
+              label="Include multi-target attack"
               onChangeEvent={this.handleChange} />
             <CheckboxInput
               value={useLimited}
               name="useLimited"
-              label="Include limited use attack?"
+              label="Include limited use attack"
               onChangeEvent={this.handleChange} />
           </fieldset>
         </form>
