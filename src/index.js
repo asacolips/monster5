@@ -152,7 +152,7 @@ class Damage extends React.Component {
     return Math.round(base_damage + (base_damage * modifier));
   }
 
-  calculateRandomDamage(value, die, swing, multiAttack) {
+  calculateRandomDamage(value, die, swing, multiAttack, useMultiTarget, useLimited) {
     var dieCount;
     var dieValue;
     var staticValue;
@@ -163,6 +163,9 @@ class Damage extends React.Component {
     var separator;
     var attackOutput;
     var totalValue;
+    var resultMain = '';
+    var resultMulti = '';
+    var resultLimited = '';
 
     // Divide attacks.
     totalValue = value;
@@ -197,9 +200,53 @@ class Damage extends React.Component {
       multiAttack--;
     }
 
+    resultMain = dieOutput + separator + staticOutput;
+
+    // Add multi-target attack.
+    if (useMultiTarget) {
+      dieOutput = dieCount > 2 ? Math.round(dieCount / 2) + 'd' + die : '';
+      staticOutput = (staticDamage > 2) ? Math.round(staticDamage / 2) : '';
+      separator = (dieCount > 2 && staticDamage > 2) ? '+' : '';
+      if (multiAttack > 1) {
+        multiAttack--;
+      }
+      if (dieOutput > 2 || staticOutput > 2) {
+        resultMulti = <div className="property-line property-line--damage property-line--row">
+          <h4>Multi-Target</h4><p>{dieOutput + separator + staticOutput}</p>
+        </div>;
+      }
+    }
+
+    // Add limited-use attack.
+    if (useLimited) {
+      dieOutput = dieCount > 0 ? (2 * dieCount) + 'd' + die : '';
+      staticOutput = (staticDamage > 0) ? (2 * staticDamage) : '';
+      separator = (dieCount > 0 && staticDamage > 0) ? '+' : '';
+      if (multiAttack > 1) {
+        multiAttack--;
+      }
+      resultLimited = <div className="property-line property-line--damage property-line--row">
+        <h4>Limited Use</h4><p>{dieOutput + separator + staticOutput}</p>
+      </div>;
+    }
+
     attackOutput = multiAttack > 1 ? ' [' + multiAttack + ' attacks]' : '';
 
-    return '(' + dieOutput + separator + staticOutput + ')' + attackOutput;
+    var result = [];
+
+    result.push(<div className="property-line property-line--damage property-line--row">
+      <h4>{multiAttack > 1 ? 'Multiattack Damage' : 'Attack Damage'}</h4><p>{resultMain + attackOutput}</p>
+    </div>);
+
+    if (resultMulti) {
+      result.push(resultMulti);
+    }
+
+    if (resultLimited) {
+      result.push(resultLimited);
+    }
+
+    return result;
   }
 
   render() {
@@ -208,11 +255,16 @@ class Damage extends React.Component {
     const swing = this.props.swing;
     const die = this.props.die;
     const multiAttack = this.props.multiAttack;
-    const dieDamage = this.calculateRandomDamage(damage, die, swing, multiAttack);
+    const useMultiTarget = this.props.useMultiTarget;
+    const useLimited = this.props.useLimited;
+    const dieDamage = this.calculateRandomDamage(damage, die, swing, multiAttack, useMultiTarget, useLimited);
     return (
-      <div className="property-line property-line--damage">
-        <h4>Damage:</h4>
-        <p>{damage} {dieDamage}</p>
+      <div className="property-rows property-rows--damage">
+        <div className="property-line property-line--damage">
+          <h4>Total Damage</h4>
+          <p>{damage}</p>
+        </div>
+        {dieDamage}
       </div>
     )
   }
@@ -286,6 +338,28 @@ class Save extends React.Component {
   }
 }
 
+class TextInput extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(e) {
+    this.props.onChangeEvent(e);
+  }
+
+  render() {
+    const value = this.props.value;
+    const name = this.props.name;
+    return (
+      <div className="form-item form-item--text form-item--title">
+        <label htmlFor={name}>{this.props.label}:</label>
+        <input type="text" name={name} value={value} onChange={this.handleChange} />
+      </div>
+    );
+  }
+}
+
 // Main CR input element.
 class ChallengeRatingInput extends React.Component {
   constructor(props) {
@@ -302,9 +376,38 @@ class ChallengeRatingInput extends React.Component {
     const name = this.props.name;
     return (
       <div className="form-item form-item--text form-item--cr">
-        <legend>Enter CR:</legend>
-        <input type="number" name={name} value={value}
-          onChange={this.handleChange} />
+        <label htmlFor={name}>Enter CR:</label>
+        <input type="number" name={name} value={value} onChange={this.handleChange} />
+      </div>
+    );
+  }
+}
+
+class SizeSelect extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  // Pass the event on change.
+  handleChange(e) {
+    this.props.onChangeEvent(e);
+  }
+
+  // Render select markup.
+  render() {
+    const value = this.props.value;
+    return (
+      <div className="form-item form-item--select form-item--mod">
+        <label htmlFor="size">Size:</label>
+        <select name="size" value={value} onChange={this.handleChange}>
+          <option value="Tiny">Tiny</option>
+          <option value="Small">Small</option>
+          <option value="Medium">Medium</option>
+          <option value="Large">Large</option>
+          <option value="Huge">Huge</option>
+          <option value="Gargantuan">Gargantuan</option>
+        </select>
       </div>
     );
   }
@@ -336,6 +439,30 @@ class ModifierSelect extends React.Component {
           <option value="large">Large</option>
           <option value="larger">Larger</option>
         </select>
+      </div>
+    );
+  }
+}
+
+class CheckboxInput extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  // Pass the event on change.
+  handleChange(e) {
+    this.props.onChangeEvent(e);
+  }
+
+  // Render select markup.
+  render() {
+    const value = this.props.value;
+    const name = this.props.name;
+    return (
+      <div className={"form-item form-item--checkbox form-item--" + name}>
+        <input type="checkbox" name={name} checked={value} onChange={this.handleChange}/>
+        <label htmlFor={name}>{this.props.label}</label>
       </div>
     );
   }
@@ -422,7 +549,10 @@ class Monster extends React.Component {
     this.handleChange = this.handleChange.bind(this);
     // Define states.
     this.state = {
+      title: 'Dangerous Foe!',
       cr: '1',
+      size: 'Medium',
+      type: 'monstrosity',
       mod: '',
       modHp: '',
       modAc: '',
@@ -433,17 +563,23 @@ class Monster extends React.Component {
       die: 8,
       swing: 0.5,
       multiAttack: 1,
+      useMultiTarget: false,
+      useLimited: false
     };
   }
 
   // Generic state change handler.
   handleChange(event) {
-    this.setState({ [event.target.name]: event.target.value });
+    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+    this.setState({ [event.target.name]: value });
   }
 
   render() {
     // Map states to constants.
+    const title = this.state.title;
     const cr = this.state.cr;
+    const size = this.state.size;
+    const type = this.state.type;
     const modHp = this.state.modHp;
     const modAc = this.state.modAc;
     const modAttack = this.state.modAttack;
@@ -453,17 +589,34 @@ class Monster extends React.Component {
     const die = this.state.die;
     const swing = this.state.swing;
     const multiAttack = this.state.multiAttack;
+    const useMultiTarget = this.state.useMultiTarget;
+    const useLimited = this.state.useLimited;
 
     return (
       <div className="monster">
         {/* Build inputs to collect values. Each value maps a
         generic prop (e.g. value) to a specific state (e.g. cr). */}
         <form className="monster__form">
-          <fieldset className="monster__fieldset">
+          <fieldset className="monster__fieldset monster__fieldset--settings">
+            <TextInput
+              value={title}
+              name="title"
+              label="Monster Name"
+              onChangeEvent={this.handleChange} />
             <ChallengeRatingInput
               value={cr}
               name="cr"
               onChangeEvent={this.handleChange} />
+            <SizeSelect
+              value={size}
+              onChangeEvent={this.handleChange} />
+            <TextInput
+              value={type}
+              name="type"
+              label="Monster Type"
+              onChangeEvent={this.handleChange} />
+          </fieldset>
+          <fieldset className="monster__fieldset monster__fieldset--modifiers">
             <ModifierSelect
               value={modHp}
               name="modHp"
@@ -494,6 +647,8 @@ class Monster extends React.Component {
               name="modSave"
               label="Modify Saving Throw Bonus"
               onChangeEvent={this.handleChange} />
+          </fieldset>
+          <fieldset className="monster__fieldset monster__fieldset--attacks">
             <DieSelect
               value={die}
               onChangeEvent={this.handleChange} />
@@ -503,14 +658,24 @@ class Monster extends React.Component {
             <MultiAttackSlider
               value={multiAttack}
               onChangeEvent={this.handleChange} />
+            <CheckboxInput
+              value={useMultiTarget}
+              name="useMultiTarget"
+              label="Include multi-target attack?"
+              onChangeEvent={this.handleChange} />
+            <CheckboxInput
+              value={useLimited}
+              name="useLimited"
+              label="Include limited use attack?"
+              onChangeEvent={this.handleChange} />
           </fieldset>
         </form>
         {/* Build markup to output values. */}
         <div className="stat-block">
           <hr className="orange-border" />
           <div className="creature-heading">
-            <h1>Dangerous Foe!</h1>
-            <h2>Medium monstrosity, unaligned</h2>
+            <h1>{title}</h1>
+            <h2>{size} {type}</h2>
           </div>
           <svg height="5" width="100%" class="tapered-rule">
             <polyline points="0,0 400,2.5 0,5"></polyline>
@@ -541,17 +706,21 @@ class Monster extends React.Component {
           <svg height="5" width="100%" class="tapered-rule">
             <polyline points="0,0 400,2.5 0,5"></polyline>
           </svg>
-          <Attack
-            cr={cr}
-            mod={modAttack} />
-          <Damage
-            cr={cr}
-            mod={modDamage}
-            die={die}
-            swing={swing}
-            multiAttack={multiAttack} />
-            <hr className="orange-border bottom" />
+          <div className="actions">
+            <Attack
+              cr={cr}
+              mod={modAttack} />
+            <Damage
+              cr={cr}
+              mod={modDamage}
+              die={die}
+              swing={swing}
+              multiAttack={multiAttack}
+              useMultiTarget={useMultiTarget}
+              useLimited={useLimited} />
           </div>
+          <hr className="orange-border bottom" />
+        </div>
       </div>
     );
   }
