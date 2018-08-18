@@ -141,10 +141,65 @@ class Damage extends React.Component {
     return Math.round(base_damage + (base_damage * modifier));
   }
 
+  calculateRandomDamage(value, die, swing, multiAttack) {
+    var dieCount;
+    var dieValue;
+    var staticValue;
+    var staticDamage;
+    var dieDamage;
+    var dieOutput;
+    var staticOutput;
+    var separator;
+    var attackOutput;
+    var totalValue;
+
+    // Divide attacks.
+    totalValue = value;
+    value = Math.round(value / multiAttack);
+
+    // Calculate static damage.
+    dieCount = 0;
+    dieDamage = 0;
+    dieValue = (parseInt(die, 10) + 1) / 2;
+    staticValue = value * (1 - swing);
+
+    // Loop through and determine random damage.
+    while (dieDamage < (value - staticValue)) {
+      dieCount++;
+      dieDamage += dieValue;
+      console.log('die(' + dieCount + 'x' + die + '): ' + dieDamage + ', static: ' + staticValue + ', total: ' + value + ', newTotal: ' + (dieDamage + staticValue));
+    }
+
+    // Determine the die output string.
+    dieOutput = dieCount > 0 ? dieCount + 'd' + die : '';
+
+    // Determine the static output string.
+    staticDamage = Math.floor(value - dieDamage);
+    staticDamage = (staticDamage > 0) ? staticDamage : 0;
+    staticOutput = (staticDamage > 0) ? staticDamage : '';
+
+    // Determine the separator.
+    separator = (dieCount > 0 && staticDamage > 0) ? '+' : '';
+
+    // Ensure that we don't have too many attacks.
+    while (multiAttack * (staticDamage + dieDamage) > totalValue) {
+      multiAttack--;
+    }
+
+    attackOutput = multiAttack > 1 ? ' x' + multiAttack : '';
+
+    return '(' + dieOutput + separator + staticOutput + ')' + attackOutput;
+  }
+
   render() {
     const mod = this.calculateMod(this.props.mod);
+    const damage = this.calculate(this.props.cr, mod);
+    const swing = this.props.swing;
+    const die = this.props.die;
+    const multiAttack = this.props.multiAttack;
+    const dieDamage = this.calculateRandomDamage(damage, die, swing, multiAttack);
     return (
-      <div><strong>Damage:</strong> {this.calculate(this.props.cr, mod)}</div>
+      <div><strong>Damage:</strong> {damage} {dieDamage}</div>
     )
   }
 }
@@ -249,20 +304,92 @@ class ModifierSelect extends React.Component {
 
   // Render select markup.
   render() {
-    const value = this.props.value
-    const name = this.props.name
+    const value = this.props.value;
+    const name = this.props.name;
     return (
       <div>
-        <label>
-          {this.props.label}:
-          <select name={name} value={value} onChange={this.handleChange}>
-            <option value="smaller">Smaller</option>
-            <option value="small">Small</option>
-            <option value="">Standard</option>
-            <option value="large">Large</option>
-            <option value="larger">Larger</option>
-          </select>
-        </label>
+        <label htmlFor={name}>{this.props.label}:</label>
+        <select name={name} value={value} onChange={this.handleChange}>
+          <option value="smaller">Smaller</option>
+          <option value="small">Small</option>
+          <option value="">Standard</option>
+          <option value="large">Large</option>
+          <option value="larger">Larger</option>
+        </select>
+      </div>
+    );
+  }
+}
+
+class DieSelect extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  // Pass the event on change.
+  handleChange(e) {
+    this.props.onChangeEvent(e);
+  }
+
+  // Render select markup.
+  render() {
+    const value = this.props.value;
+    return (
+      <div>
+        <label htmlFor="die">Damage Die:</label>
+        <select name="die" value={value} onChange={this.handleChange}>
+          <option value="3">d3</option>
+          <option value="4">d4</option>
+          <option value="6">d6</option>
+          <option value="8">d8</option>
+          <option value="10">d10</option>
+          <option value="12">d12</option>
+          <option value="20">d20</option>
+        </select>
+      </div>
+    );
+  }
+}
+
+class PercentSlider extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(e) {
+    this.props.onChangeEvent(e);
+  }
+
+  render() {
+    const value = this.props.value;
+    return (
+      <div>
+        <label htmlFor="swing">Swing:</label>
+        <input type="range" name="swing" min="0" max="1" value={value} onChange={this.handleChange} step="0.1" />
+        <span>({value * 100}%)</span>
+      </div>
+    );
+  }
+}
+
+class MultiAttackSlider extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(e) {
+    this.props.onChangeEvent(e);
+  }
+
+  render() {
+    const value = this.props.value;
+    return (
+      <div>
+        <label htmlFor="multiAttack">Number of Attacks:</label>
+        <input type="range" name="multiAttack" min="1" max="10" value={value} onChange={this.handleChange} step="1" />
       </div>
     );
   }
@@ -282,7 +409,10 @@ class Monster extends React.Component {
       modAttack: '',
       modDamage: '',
       modDc: '',
-      modSave: ''
+      modSave: '',
+      die: 8,
+      swing: 0.5,
+      multiAttack: 1,
     };
   }
 
@@ -300,6 +430,9 @@ class Monster extends React.Component {
     const modDamage = this.state.modDamage;
     const modDc = this.state.modDc;
     const modSave = this.state.modSave;
+    const die = this.state.die;
+    const swing = this.state.swing;
+    const multiAttack = this.state.multiAttack;
 
     return (
       <div>
@@ -340,6 +473,15 @@ class Monster extends React.Component {
             name="modSave"
             label="Modify Saving Throw Bonus"
             onChangeEvent={this.handleChange} />
+          <DieSelect
+            value={die}
+            onChangeEvent={this.handleChange} />
+          <PercentSlider
+            value={swing}
+            onChangeEvent={this.handleChange} />
+          <MultiAttackSlider
+            value={multiAttack}
+            onChangeEvent={this.handleChange} />
         </fieldset>
         {/* Build markup to output values. */}
         <HitPoints
@@ -353,7 +495,10 @@ class Monster extends React.Component {
           mod={modAttack} />
         <Damage
           cr={cr}
-          mod={modDamage} />
+          mod={modDamage}
+          die={die}
+          swing={swing}
+          multiAttack={multiAttack} />
         <DifficultyClass
           cr={cr}
           mod={modDc} />
