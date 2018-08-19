@@ -376,7 +376,7 @@ class ChallengeRatingInput extends React.Component {
     const name = this.props.name;
     return (
       <div className="form-item form-item--text form-item--cr">
-        <label htmlFor={name}>Enter CR:</label>
+        <label htmlFor={name}>CR:</label>
         <input type="number" name={name} value={value} onChange={this.handleChange} />
       </div>
     );
@@ -430,7 +430,7 @@ class ModifierSelect extends React.Component {
     const value = this.props.value;
     const name = this.props.name;
     return (
-      <div className="form-item form-item--select form-item--mod">
+      <div className="form-item form-item--select form-item--half form-item--mod">
         <label htmlFor={name}>{this.props.label}:</label>
         <select name={name} value={value} onChange={this.handleChange}>
           <option value="smaller">Smaller</option>
@@ -460,7 +460,7 @@ class CheckboxInput extends React.Component {
     const value = this.props.value;
     const name = this.props.name;
     return (
-      <div className={"form-item form-item--checkbox form-item--" + name}>
+      <div className={"form-item form-item--checkbox form-item--half form-item--" + name}>
         <input type="checkbox" name={name} checked={value} onChange={this.handleChange}/>
         <label htmlFor={name}>{this.props.label}</label>
       </div>
@@ -513,9 +513,8 @@ class PercentSlider extends React.Component {
     const value = this.props.value;
     return (
       <div className="form-item form-item--range form-item--swing">
-        <label htmlFor="swing">Swing:</label>
+        <label htmlFor="swing">% Random:</label>
         <input type="range" name="swing" min="0" max="1" value={value} onChange={this.handleChange} step="0.1" />
-        <span>({value * 100}%)</span>
       </div>
     );
   }
@@ -535,7 +534,7 @@ class MultiAttackSlider extends React.Component {
     const value = this.props.value;
     return (
       <div className="form-item form-item--range form-item--multiattack">
-        <label htmlFor="multiAttack">Number of Attacks:</label>
+        <label htmlFor="multiAttack"># Attacks:</label>
         <input type="range" name="multiAttack" min="1" max="10" value={value} onChange={this.handleChange} step="1" />
       </div>
     );
@@ -601,7 +600,7 @@ class Monster extends React.Component {
             <TextInput
               value={title}
               name="title"
-              label="Monster Name"
+              label="Name"
               onChangeEvent={this.handleChange} />
             <ChallengeRatingInput
               value={cr}
@@ -613,42 +612,44 @@ class Monster extends React.Component {
             <TextInput
               value={type}
               name="type"
-              label="Monster Type"
+              label="Type"
               onChangeEvent={this.handleChange} />
           </fieldset>
           <fieldset className="monster__fieldset monster__fieldset--modifiers">
+            <div><h3>Modifiers</h3></div>
             <ModifierSelect
               value={modHp}
               name="modHp"
-              label="Modify HP"
+              label="HP"
               onChangeEvent={this.handleChange} />
             <ModifierSelect
               value={modAc}
               name="modAc"
-              label="Modify AC"
+              label="AC"
               onChangeEvent={this.handleChange} />
             <ModifierSelect
               value={modAttack}
               name="modAttack"
-              label="Modify Attack Bonus"
+              label="Attack"
               onChangeEvent={this.handleChange} />
             <ModifierSelect
               value={modDamage}
               name="modDamage"
-              label="Modify Damage"
+              label="Damage"
               onChangeEvent={this.handleChange} />
             <ModifierSelect
               value={modDc}
               name="modDc"
-              label="Modify Save DC"
+              label="Save DC"
               onChangeEvent={this.handleChange} />
             <ModifierSelect
               value={modSave}
               name="modSave"
-              label="Modify Saving Throw Bonus"
+              label="Save Bonus"
               onChangeEvent={this.handleChange} />
           </fieldset>
           <fieldset className="monster__fieldset monster__fieldset--attacks">
+            <div><h3>Damage</h3></div>
             <DieSelect
               value={die}
               onChangeEvent={this.handleChange} />
@@ -661,12 +662,12 @@ class Monster extends React.Component {
             <CheckboxInput
               value={useMultiTarget}
               name="useMultiTarget"
-              label="Include multi-target attack"
+              label="Include multi-target"
               onChangeEvent={this.handleChange} />
             <CheckboxInput
               value={useLimited}
               name="useLimited"
-              label="Include limited use attack"
+              label="Include limited use"
               onChangeEvent={this.handleChange} />
           </fieldset>
         </form>
@@ -720,6 +721,9 @@ class Monster extends React.Component {
               useLimited={useLimited} />
           </div>
           <hr className="orange-border bottom" />
+        </div>
+        <div className="footer">
+          <em>Derived from <a href="http://blogofholding.com/?p=7338" target="_blank" rel="noopener noreferrer">5e MM on a business card.</a></em>
         </div>
       </div>
     );
